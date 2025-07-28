@@ -22,17 +22,31 @@ app.get('/api/contacts/:id', (req, res) => {
 });
 
 app.post('/api/contacts', (req, res) => {
-  const contact = { id: idCounter++, ...req.body };
+  const { name, email, phone } = req.body;
+
+  if (typeof name !== 'string' || typeof email !== 'string' || typeof phone !== 'string') {
+    return res.status(400).json({ error: 'All fields (name, email, phone) must be provided as strings.' });
+  }
+
+  const contact = { id: idCounter++, name, email, phone };
   contacts.push(contact);
   res.status(201).json(contact);
 });
 
+
 app.put('/api/contacts/:id', (req, res) => {
+  const { name, email, phone } = req.body;
   const index = contacts.findIndex(c => c.id === parseInt(req.params.id));
   if (index === -1) return res.status(404).send('Contact not found');
-  contacts[index] = { id: parseInt(req.params.id), ...req.body };
+
+  if (!name || !email || !phone) {
+    return res.status(400).json({ error: 'Name, email and phone are required.' });
+  }
+
+  contacts[index] = { id: parseInt(req.params.id), name, email, phone };
   res.json(contacts[index]);
 });
+
 
 app.delete('/api/contacts/:id', (req, res) => {
   const index = contacts.findIndex(c => c.id === parseInt(req.params.id));
