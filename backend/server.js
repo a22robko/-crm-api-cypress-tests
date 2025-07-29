@@ -1,57 +1,60 @@
-describe('CRM API Tests', () => {
-  const api = 'http://localhost:3000/api/contacts';
-  let contactId;
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
 
-  it('should create a new contact', () => {
-    cy.request('POST', api, {
-      name: 'Alice Smith',
-      email: 'alice@example.com',
-      phone: '9876543210'
-    }).then((response) => {
-      expect(response.status).to.eq(201);
-      expect(response.body).to.have.property('id');
-      contactId = response.body.id;
-    });
-  });
+const app = express();
+const port = 3000;
 
-  it('should get all contacts', () => {
-    cy.request('GET', api).then((response) => {
-      expect(response.status).to.eq(200);
-      expect(response.body).to.be.an('array');
-    });
-  });
+app.use(cors());
+app.use(bodyParser.json());
 
-  it('should get contact by ID', () => {
-    cy.request('GET', `${api}/${contactId}`).then((response) => {
-      expect(response.status).to.eq(200);
-      expect(response.body).to.have.property('name', 'Alice Smith');
-    });
-  });
+let contacts = [];
+let idCounter = 1;
 
-  it('should update contact by ID', () => {
-    cy.request('PUT', `${api}/${contactId}`, {
-      name: 'Alice Johnson',
-      email: 'alicej@example.com',
-      phone: '9876543210'
-    }).then((response) => {
-      expect(response.status).to.eq(200);
-      expect(response.body).to.have.property('name', 'Alice Johnson');
-    });
-  });
+app.get('/api/contacts', (req, res) => {
+  res.json(contacts);
+});
 
-  it('should delete contact by ID', () => {
-    cy.request('DELETE', `${api}/${contactId}`).then((response) => {
-      expect(response.status).to.eq(200);
-    });
-  });
+app.get('/api/contacts/:id', (req, res) => {
+  const contact = contacts.find(c => c.id === parseInt(req.params.id));
+  if (!contact) return res.status(404).send('Contact not found');
+  res.json(contact);
+});
 
-  it('should return 404 for deleted contact', () => {
-    cy.request({
-      method: 'GET',
-      url: `${api}/${contactId}`,
-      failOnStatusCode: false
-    }).then((response) => {
-      expect(response.status).to.eq(404);
-    });
-  });
+app.post('/api/contacts', (req, res) => {
+  const { name, email, phone } = req.body;
+
+  if (typeof name !== 'string' || typeof email !== 'string' || typeof phone !== 'string') {
+    return res.status(400).json({ error: 'All fields (name, email, phone) must be provided as strings.' });
+  }
+
+  const contact = { id: idCounter++, name, email, phone };
+  contacts.push(contact);
+  res.status(201).json(contact);
+});
+
+
+app.put('/api/contacts/:id', (req, res) => {
+  const { name, email, phone } = req.body;
+  const index = contacts.findIndex(c => c.id === parseInt(req.params.id));
+  if (index === -1) return res.status(404).send('Contact not found');
+
+  if (!name || !email || !phone) {
+    return res.status(400).json({ error: 'Name, email and phone are required.' });
+  }
+
+  contacts[index] = { id: parseInt(req.params.id), name, email, phone };
+  res.json(contacts[index]);
+});
+
+
+app.delete('/api/contacts/:id', (req, res) => {
+  const index = contacts.findIndex(c => c.id === parseInt(req.params.id));
+  if (index === -1) return res.status(404).send('Contact not found');
+  contacts.splice(index, 1);
+  res.sendStatus(200);
+});
+
+app.listen(port, () => {
+  console.log(`CRM API running at http://localhost:${port}/api`);
 });
