@@ -1,4 +1,4 @@
-# 📇 Contact Management API – Express + JSON
+# 📇 Contact Management API – Express + JSON (No Frontend)
 
 This project is a simple contact management backend built with **Node.js**, **Express**, and **JSON** data format.  
 It supports full CRUD functionality for managing contacts via RESTful endpoints and demonstrates how the API behaves using real screenshots from **Postman**.
